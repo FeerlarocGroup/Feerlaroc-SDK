@@ -1,10 +1,10 @@
 <h1>feerlaroc.js</h1>
-
+<em>feerlaroc.js is a cross platform library which is usable with the feerlaroc REST API</em>
 <h2>Getting Started</h2>
 
 <em>Login</em>
 
-<code>
+<pre><code>
  function exec(){
         //read the text boxes
         var m_username = $('#username').val();
@@ -18,11 +18,11 @@
                 alert("The server is down");
         }
 }
-</code> 
+</code></pre> 
 
 <em>Signup</em>
 
-<code>
+<pre><code>
 function exec(){
         //read the text boxes
         var m_name = $('#name').val();
@@ -39,11 +39,11 @@ function exec(){
                 alert("The server is down");
         }
 }
-</code>
+</code></pre>
 
 <em>Trade</em>
 
-<code>
+<pre><code>
 function exec(){
          //check whether the server is running
         if(feerlaroc.SERVER_STATE == "running"){
@@ -60,4 +60,4 @@ function exec(){
                         alert("The server is down");
         }
 }
-</code>
+</code></pre>
