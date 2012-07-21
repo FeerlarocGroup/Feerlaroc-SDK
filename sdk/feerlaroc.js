@@ -283,7 +283,7 @@
 		            
 		      });
 		      
-		      var recharge = feerlaroc.recharge = function(){};
+		      var deposite = feerlaroc.recharge = function(){};
 		      var geolocation = feerlaroc.getCurrentPossion = function(){
                                 var packet = {Latitude:"",Longitude:"",Altitude:"",Accuracy:"",Altitude_Accuracy:"",Heading:"",Speed:""};
                                 localNavigator.geolocation.getCurrentPosition(onSuccess, onError);
