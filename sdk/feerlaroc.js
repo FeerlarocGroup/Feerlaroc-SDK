@@ -8,10 +8,10 @@
                 
                 var previousfeerlaroc = root.feerlaroc;
                 
-                var Uri = ["http://192.168.1.3:8080/feerlarocserver/resources/start"];
+                var Uri = ["http://uqamata.feerlaroc.cloudbees.net/start"];
                 var activeid = [];
                 var resp = [];
-                var current = 0;
+                
                 var merchant_status = ["merchant_exist","no_merchant"];
                 var Aouth_status = ["loggedin","not_loggedin","signedup","not_signedup","retrieved","not_retrieved","updated","not_updated"];
                 var server_status = ["running", "down"];
@@ -41,6 +41,7 @@
                 feerlaroc.MERCHANT_STATE = merchant_status[1];
                 feerlaroc.SERVER_STATE = server_status[1];
                 feerlaroc.LOCALATTRIBUTES = {};
+                feerlaroc.AOUTHATTRIBUTES = {};
                 feerlaroc.AOUTH_STATE = Aouth_status[1];
                 feerlaroc.U_MODEL = UserModel;
                 feerlaroc.T_MODEL = TradeModel;
@@ -70,13 +71,20 @@
                          set: function(){},  
 		        
 		        get: function() {
-		                UserModel.urlRoot =  Uri[0];
+		                        UserModel.urlRoot =  Uri[0];
 	                                var  xhr = UserModel.fetch().done(function(data){
-	                                        Uri.push(data.logon[current].uri);
-	                                        Uri.push(data.signup[current].uri);
-	                                        feerlaroc.SERVER_STATE = server_status[0];
+	                                        Uri = ["http://uqamata.feerlaroc.cloudbees.net/start"];
+	                                        Uri.push(data.feer_attributes.logon.uri);
+	                                        Uri.push(data.feer_attributes.signup.uri);
 	                                });
-	                                return feerlaroc.SERVER_STATE;
+	                                if(xhr.status = 200){
+	                                        feerlaroc.SERVER_STATE = server_status[0];
+	                                        return feerlaroc.SERVER_STATE;
+	                                }else{
+	                                        feerlaroc.SERVER_STATE = server_status[1];
+	                                        return feerlaroc.SERVER_STATE;	                                
+	                                }
+	                      
 		        },
 		        
 		        post: function() {},
@@ -89,8 +97,9 @@
 
                  var login = feerlaroc.login=function(name,sname,cell,username,pass){
                                 UserModel.clear();
-
+                                feerlaroc.AOUTHATTRIBUTES = {};
                                 login.prototype.set("","","",username,pass);
+                                feerlaroc.AOUTHATTRIBUTES = _.clone(login.prototype.attr());
                                 return login.prototype.post();
                         };
                         
@@ -101,8 +110,8 @@
                         set: function(attr1,attr2,attr3,attr4,attr5){
                                 UserModel.set({
                                         name: attr1,
-                                        sname: attr2,
-                                        cell: attr3,
+                                        surname: attr2,
+                                        mobile_number: attr3,
                                         username: attr4,
                                         password: attr5
                                 });
@@ -115,21 +124,28 @@
                                  if(Uri.length > 1){ 
                                         var decodedParseURI;
                                         var xhr = UserModel.save().done(function(data){
-                                                decodedParseURI = decodeURIComponent(data.logon[current].logon_at);
+                                                decodedParseURI = decodeURIComponent(data.feer_attributes.logon.logon_at);
 
                                                 if (data.codetext != "User is Invalid"){
-                                                        activeid.push(data._activeid.$oid);
+                                                        //activeid.push(data._activeid.$oid);
                                                         Uri.push(decodedParseURI);
-                                                        Uri.push(data.logon[current].uri);
-                                                        feerlaroc.SERVER_STATE = server_status[0];
-                                                        return parse_get();
+                                                        Uri.push(data.feer_attributes.logon.uri);
+                                                        parse_get();
                                                 }else{
                                                         alert(data.codetext);        
-                                                        feerlaroc.SERVER_STATE = server_status[0]; 
                                                         feerlaroc.AOUTH_STATE = Aouth_status[0];          
-                                                        return  feerlaroc.SERVER_STATE;          
+                                                        feerlaroc.SERVER_STATE;          
                                                 }           
                                         });
+	                                if(xhr.status = 200){
+	                                        feerlaroc.SERVER_STATE = server_status[0];
+	                                        feerlaroc.AOUTH_STATE = Aouth_status[0];
+		                                return feerlaroc.AOUTH_STATE;
+	                                }else{
+	                                        feerlaroc.SERVER_STATE = server_status[1];
+	                                        feerlaroc.AOUTH_STATE = Aouth_status[1];
+					        return feerlaroc.AOUTH_STATE;	                                
+	                                }
                                   }else{
                                           feerlaroc.AOUTH_STATE = Aouth_status[1];
                                           return  feerlaroc.SERVER_STATE; 
@@ -141,9 +157,10 @@
                 });
 
                  var signup = feerlaroc.signup = function(name,sname,cell,username,pass){
-                                UserModel.clear();
-
+                        
+                                feerlaroc.AOUTHATTRIBUTES = {};
                                 signup.prototype.set(name,sname,cell,username,pass);
+                                feerlaroc.AOUTHATTRIBUTES = _.clone(signup.prototype.attr());
                                 return signup.prototype.post();
                         };
                         
@@ -156,8 +173,8 @@
                         set: function(attr1,attr2,attr3,attr4,attr5){
                                 UserModel.set({
                                         name: attr1,
-                                        sname: attr2,
-                                        cell: attr3,
+                                        surname: attr2,
+                                        mobile_number: attr3,
                                         username: attr4,
                                         password: attr5
                                 });
@@ -169,11 +186,19 @@
 		                UserModel.urlRoot = Uri[2];
 		                 if(Uri.length > 1){
 		                         var xhr = UserModel.save().done(function(data){
-		                                feerlaroc.SERVER_STATE = server_status[0];
-                                               Uri.push(data.signup[current].signup_at); //5---signup_at(parse)
-                                               Uri.push(data.signup[current].uri); //6---ask for trade(after succeessful login)) 
-                                               return parse_post();
+                                               Uri.push(data.feer_attributes.signup.signup_at); //4---signup_at(parse)
+                                               Uri.push(data.feer_attributes.signup.uri); //5---ask for trade(after succeessful login)) 
+                                               parse_post();
                                         });
+	                                if(xhr.status = 200){
+	                                        feerlaroc.SERVER_STATE = server_status[0];
+	                                         feerlaroc.AOUTH_STATE = Aouth_status[2];
+                                                return feerlaroc.AOUTH_STATE;
+	                                }else{
+	                                        feerlaroc.SERVER_STATE = server_status[1];
+	                                        feerlaroc.AOUTH_STATE = Aouth_status[3];
+		                                return feerlaroc.AOUTH_STATE;	                                
+	                                }
                                  }else{
                                         feerlaroc.AOUTH_STATE = Aouth_status[3];
                                         return feerlaroc.SERVER_STATE;
@@ -186,43 +211,29 @@
 
                 });
 
-                var profile = feerlaroc.profile.update = function(name,sname,cell,username,pass){
-                                UserModel.clear();
-                                if(Uri.length > 1){   
-                                                profile.prototype.set(name,sname,cell,username,pass);
-                                                return profile.prototype.update();
-                                  }else{
-                                        feerlaroc.AOUTH_STATE = Aouth_status[7];
-                                        return feerlaroc.SERVER_STATE;
-                                 }
-                        };
-                        _.extend(profile.prototype,{
-                        set: function(attr1,attr2,attr3,attr4,attr5){
-                                UserModel.set({
+                var profile = feerlaroc.profile.update = function(attr1,attr2,attr3,attr4,attr5){
+                                  UserModel.clear(); 
+                                  UserModel.attributes = {
                                         name: attr1,
-                                        sname: attr2,
-                                        cell: attr3,
+                                        surname: attr2,
+                                        mobile_number: attr3,
                                         username: attr4,
                                         password: attr5
-                                });
-		        },
+                                        };
+                                return profile.prototype.update();
+                        };
+                        _.extend(profile.prototype,{
                         update: function(){
                                 return parse_update();
                         }
                 });
                 var profile = feerlaroc.profile.retrieve = function(){
                                 UserModel.clear();
-                                if(Uri.length > 1){
-                                          return profile.prototype.retrieve();
-                                  }else{
-                                        feerlaroc.AOUTH_STATE = Aouth_status[5];
-                                        return feerlaroc.SERVER_STATE;
-                                 }
+                                return profile.prototype.retrieve();
                 };
                   _.extend(profile.prototype,{
-                         retrieve: function(){
-                                parse_retrieve();
-                                return feerlaroc.LOCALATTRIBUTES;
+                         retrieve: function(){  
+                                return parse_retrieve();
                         }
                 });               
                 var trade = feerlaroc.trade = function( number, amount) {
@@ -331,11 +342,12 @@
                         parseUri = Uri[3]; 	        
 		        var xhr = new XMLHttpRequest();		        
 		        xhr.open("GET", parseUri, true);
-		        xhr.setRequestHeader("X-Parse-Application-Id",PARSE_APP_ID);
-		        xhr.setRequestHeader("X-Parse-REST-API-Key",PARSE_REST_KEY);
+		        xhr.setRequestHeader("X-Parse-Application-Id",feerlaroc.PARSE_APP_ID);
+		        xhr.setRequestHeader("X-Parse-REST-API-Key",feerlaroc.PARSE_REST_KEY);
 		        xhr.onreadystatechange = function(data) {
 			        if (xhr.readyState == 4) {
 				        var result = JSON.parse(xhr.responseText);
+				        UserModel.clear();
 				        UserModel.set({
                                                 cellnumber: result.cellnumber,
                                                 createdAt: result.createdAt,
@@ -348,18 +360,11 @@
 				        });
 				        
 				        if (result.objectId) {
-					        ObjId = result.objectId;
-					        
-					        alert("logged on with object id: " + result.objectId);
+				                userID = result.objectId;
+				                console.log(userID);
                                                 feerlaroc.merchant_state = m_post(Uri[4]);
-                                                feerlaroc.AOUTH_STATE = Aouth_status[0];
-		                                return feerlaroc.AOUTH_STATE;
-				        } else {
-					        feerlaroc.AOUTH_STATE = Aouth_status[1];
-					        return feerlaroc.AOUTH_STATE;
+
 				        }
-			        }else{
-			                feerlaroc.AOUTH_STATE = Aouth_status[1];
 			        }
 		        }
 		        xhr.send();
@@ -367,14 +372,13 @@
 
 		var parse_post = function() {
 
-		        parseUri = Uri[5] ; 	        
-	                
+		        //parseUri = Uri[5] ; 	        
 		        //Setup XMLHttpRequest, setup headers and content type
 		        var xhr = new XMLHttpRequest();
-		        xhr.open("POST",parseUri, true);
+		        xhr.open("POST",PARSE_SIGNUP_LINK, true);
 		
-		        xhr.setRequestHeader("X-Parse-Application-Id",PARSE_APP_ID);
-		        xhr.setRequestHeader("X-Parse-REST-API-Key",PARSE_REST_KEY);
+		        xhr.setRequestHeader("X-Parse-Application-Id",feerlaroc.PARSE_APP_ID);
+		        xhr.setRequestHeader("X-Parse-REST-API-Key",feerlaroc.PARSE_REST_KEY);
 		        xhr.setRequestHeader("Content-Type", "application/json");
 		
 		        //If and only if the response is ready, userID  and sessionToken is stored in a global model for later user.
@@ -382,6 +386,7 @@
 			        if (xhr.readyState == 4) {
 				        var result = JSON.parse(xhr.responseText);
 				        if (result.objectId) {
+				                UserModel.clear();
 		                                //Capture userID and sessionToken
 		                                UserModel.set({
 		                                        objectId: result.objectId,
@@ -389,16 +394,9 @@
 		                                        createdAt: result.createdAt,
 		                                        updatedAt: result.createdAt
 		                                });
-		                                
-                                                feerlaroc.MERCHANT_STATE = m_post(Uri[6]);      //check uri
-                                                feerlaroc.AOUTH_STATE = Aouth_status[2];
-                                                return feerlaroc.AOUTH_STATE;
-		                        } else {
-		                                feerlaroc.AOUTH_STATE = Aouth_status[3];
-		                                return feerlaroc.AOUTH_STATE;
+                                                feerlaroc.MERCHANT_STATE = m_post(Uri[4]);      //check uri
+
 		                        }
-	                        }else{
-	                                feerlaroc.AOUTH_STATE = Aouth_status[3];
 	                        }
 		        }
 		
@@ -406,10 +404,10 @@
 		         var data = JSON.stringify({
 			                name : UserModel.get("name"),
 			                surname : UserModel.get("surname"),
-			                cellnumber : UserModel.get("cellnumber"),
+			                mobile_number : UserModel.get("mobile_number"),
 			                username : UserModel.get("username"),
 			                password :UserModel.get("password"),
-			                merchant : UserModel.get("merchant"),
+			                //merchant : UserModel.get("merchant"),
 		                });
 		        
 		        //Send Data
@@ -418,77 +416,79 @@
 
 	        var parse_retrieve = function(){
 
-	                var userID = UserModel.attributes.objectId;
+	                //var userID = UserModel.attributes.objectId;
 
 	                var link = "https://api.parse.com/1/users/"+userID;
 
 	                var xhr = new XMLHttpRequest();		        
 		        xhr.open("GET",link, true);
-		        xhr.setRequestHeader("X-Parse-Application-Id",PARSE_APP_ID);
-		        xhr.setRequestHeader("X-Parse-REST-API-Key",PARSE_REST_KEY);
+		        xhr.setRequestHeader("X-Parse-Application-Id",feerlaroc.PARSE_APP_ID);
+		        xhr.setRequestHeader("X-Parse-REST-API-Key",feerlaroc.PARSE_REST_KEY);
 		        xhr.onreadystatechange = function(data) {
 			        if (xhr.readyState == 4) {
 			                var result = JSON.parse(xhr.responseText);
 			                if (result.objectId) {
                                                  feerlaroc.LOCALATTRIBUTES = _.clone(result);    
-                                                 feerlaroc.AOUTH_STATE = Aouth_status[4];                    
-                                                return feerlaroc.AOUTH_STATE;
-			                } else {
-			                        feerlaroc.AOUTH_STATE = Aouth_status[5];
-                                                return feerlaroc.AOUTH_STATE;
-			                }
-		                }else{
-		                        feerlaroc.AOUTH_STATE = Aouth_status[5];
-		                }
+                                        }
+                                }
 		        }
 		        xhr.send();
+                        if(xhr.status = 200){
+                                feerlaroc.AOUTH_STATE = Aouth_status[4];                    
+                                return feerlaroc.AOUTH_STATE;
+                        } else {
+                                feerlaroc.AOUTH_STATE = Aouth_status[5];
+                                return feerlaroc.AOUTH_STATE;
+                        }
 	        
 	        };
 
 	        var parse_update = function(){
 	        
-	                var userID = UserModel.attributes.objectId;
+	                //var userID = UserModel.attributes.objectId;
 	                        
 	                var link = "https://api.parse.com/1/users/"+userID;
 	                var xhr = new XMLHttpRequest();
 	                
 		        xhr.open("PUT",link, true);
 		
-		        xhr.setRequestHeader("X-Parse-Application-Id",PARSE_APP_ID);
-		        xhr.setRequestHeader("X-Parse-REST-API-Key",PARSE_REST_KEY);
+		        xhr.setRequestHeader("X-Parse-Application-Id",feerlaroc.PARSE_APP_ID);
+		        xhr.setRequestHeader("X-Parse-REST-API-Key",feerlaroc.PARSE_REST_KEY);
 		        xhr.setRequestHeader("X-Parse-Session-Token",UserModel.attributes.sessionToken);
 		
 		        xhr.setRequestHeader("Content-Type", "application/json");
 		        xhr.onreadystatechange = function() {
 			        if (xhr.readyState == 4) {
 				        var result = JSON.parse(xhr.responseText);
-				        feerlaroc.MERCHANT_STATE = m_post(Uri[7]);      //check uri
-				        feerlaroc.AOUTH_STATE = Aouth_status[6]; 
-                                       return feerlaroc.AOUTH_STATE;
-	                        }else{
-	                                feerlaroc.AOUTH_STATE = Aouth_status[7]; 
-	                               return feerlaroc.AOUTH_STATE;
-	                        }
-		        }
+				        feerlaroc.MERCHANT_STATE = m_post(Uri[4]);      //check uri
+                                }
                         //Data to be sent to server
 		         var data = JSON.stringify({
 			                name : UserModel.get("name"),
 			                surname : UserModel.get("surname"),
-			                cellnumber : UserModel.get("cellnumber"),
+			                mobile_number : UserModel.get("mobile_number"),
 			                username : UserModel.get("username"),
 			                password :UserModel.get("password"),
-			                merchant : UserModel.get("merchant"),
+			                //merchant : UserModel.get("merchant"),
 		                });
 		         feerlaroc.LOCALATTRIBUTES = _.clone(data);
 		        xhr.send(data);
+                        if(xhr.status = 200){
+                                feerlaroc.AOUTH_STATE = Aouth_status[6]; 
+                                return feerlaroc.AOUTH_STATE;
+                        }else{
+                                feerlaroc.AOUTH_STATE = Aouth_status[7]; 
+                                return feerlaroc.AOUTH_STATE;
+                        }
+		        }
 	        
 	        };
                var m_post = function(local_uri){
 		       UserModel.urlRoot = local_uri;
 		       UserModel.save().done(function(data){
 				if(data.merchant[0].input_structure.merchant_name != " "){
-		                        for(var i=0, l = data.trade[current].services.length; i<l; i++){
-		                                TradeModel.urlSelect[i] = data.trade[current].services[i].uri;
+		                        for(var i=0, l = data.feer_attributes.trade.services.length; i<l; i++){
+		                                TradeModel.urlSelect[i] = data.feer_attributes.trade.services[i].uri;
 		                         }
 		                         return merchant_status[0];
 		                }else{
