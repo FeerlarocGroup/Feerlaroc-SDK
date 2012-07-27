@@ -13,7 +13,7 @@
                 var resp = [];
                 
                 var merchant_status = ["merchant_exist","no_merchant"];
-                var Aouth_status = ["loggedin","not_loggedin","signedup","not_signedup","retrieved","not_retrieved","updated","not_updated"];
+                var Aouth_status = ["loggedin","not_loggedin","signedup","not_signedup","retrieved","not_retrieved","updated","not_updated","deposite_success","deposite_failed"];
                 var server_status = ["running", "down"];
                 
                 var _ = root._;
@@ -73,9 +73,14 @@
 		        get: function() {
 		                        UserModel.urlRoot =  Uri[0];
 	                                var  xhr = UserModel.fetch().done(function(data){
-	                                        Uri = ["http://uqamata.feerlaroc.cloudbees.net/start"];
-	                                        Uri.push(data.feer_attributes.logon.uri);
-	                                        Uri.push(data.feer_attributes.signup.uri);
+	                                        if(data.code == 200){
+	                                                Uri = ["http://uqamata.feerlaroc.cloudbees.net/start"];
+	                                                Uri.push(data.feer_attributes.logon.uri);
+	                                                Uri.push(data.feer_attributes.signup.uri);
+	                                                feerlaroc.SERVER_STATE = server_status[0];
+	                                         }else{
+	                                                feerlaroc.SERVER_STATE = server_status[1];  
+	                                         }
 	                                });
 	                                if(xhr.status = 200){
 	                                        feerlaroc.SERVER_STATE = server_status[0];
@@ -95,7 +100,7 @@
 
                 });
 
-                 var login = feerlaroc.login=function(name,sname,cell,username,pass){
+                 var login = feerlaroc.login=function(username,pass){
                                 UserModel.clear();
                                 feerlaroc.AOUTHATTRIBUTES = {};
                                 login.prototype.set("","","",username,pass);
@@ -249,8 +254,9 @@
                         
                         set: function(attr1,attr2){
                                 TradeModel.set({
-                                        number: attr1,
-                                        amount: attr2
+                                        recipient: attr1,
+                                        amount: attr2,
+                                        location: feerlaroc.getCurrentPossion()
                                 });
 		        },
 		        
@@ -260,6 +266,7 @@
 		                        var agree = confirm("You want to sell to " + attr1 + " " + "R" + attr2 + " " + "airtime" + "?");
 		                        if (agree) {
 		                                         if(Uri.length > 1){
+		                                                TradeModel.urlRoot = Uri[6];
 			                                        var xhr = TradeModel.save().done(function(data) {
 			                                                   feerlaroc.SERVER_STATE = server_status[0];
 				                                            switch (data.code) {
@@ -293,21 +300,74 @@
                           delete: function() {}
 		            
 		      });
-		      
-		      var deposite = feerlaroc.recharge = function(){};
+		      var deposit = feerlaroc.deposit = function(attr1,attr2){
+                                TradeModel.clear();
+                                return deposit.prototype.post(attr1, attr2);		      
+		      }; 
+		      _.extend(deposit.prototype, {
+		                post: function(attr1,attr2){
+		                        TradeModel.urlRoot = Uri[5];
+                                        TradeModel.set({
+                                                amount: attr1,
+                                                pin: attr2,
+                                                location: feerlaroc.getCurrentPossion()
+                                        });
+		                        var xhr = TradeModel.save().done(function(data) {
+		                                alert(data.description);
+		                        });
+		                        if(xhr.status = 200){
+	                                        feerlaroc.SERVER_STATE = server_status[0];
+	                                         feerlaroc.AOUTH_STATE = Aouth_status[8];
+                                                return feerlaroc.AOUTH_STATE;
+	                                }else{
+	                                        feerlaroc.SERVER_STATE = server_status[1];
+	                                        feerlaroc.AOUTH_STATE = Aouth_status[9];
+		                                return feerlaroc.AOUTH_STATE;	                                
+	                                }
+		                }
+		      });
+		      var merchant = feerlaroc.merchant = function(name){
+		                UserModel.clear();
+		                return merchant.prototype.post(name);
+		       };
+		       _.extend(merchant.prototype, {
+		                post:function(name){
+		                       UserModel.urlRoot = Uri[5];
+		                       UserModel.set({merchant_name:name});
+		                       if(Uri.length > 1){
+		                         var xhr = UserModel.save().done(function(data){
+		                                Uri.push(data.feer_attributes.trade.deposit.rel); //Uri[6]
+				                Uri.push(data.feer_attributes.trade.sale.rel);//Uri[7]
+		                                 return merchant_status[0];
+                                        });
+	                                if(xhr.status = 200){
+	                                        feerlaroc.SERVER_STATE = server_status[0];
+	                                         feerlaroc.AOUTH_STATE = merchant_status[0];
+                                                return feerlaroc.AOUTH_STATE;
+	                                }else{
+	                                        feerlaroc.SERVER_STATE = server_status[1];
+	                                        feerlaroc.AOUTH_STATE = merchant_status[1];
+		                                return feerlaroc.AOUTH_STATE;	                                
+	                                }
+                                 }else{
+                                        feerlaroc.AOUTH_STATE = merchant_status[1];
+                                        return feerlaroc.SERVER_STATE;
+                                 }
+		                }
+		       });
 		      var geolocation = feerlaroc.getCurrentPossion = function(){
-                                var packet = {Latitude:"",Longitude:"",Altitude:"",Accuracy:"",Altitude_Accuracy:"",Heading:"",Speed:""};
+                                var packet = {latitude:"",longitude:"",altitude:"",accuracy:"",altitudeAccuracy:"",heading:"",speed:""};
                                 localNavigator.geolocation.getCurrentPosition(onSuccess, onError);
                                 function onSuccess(position) {
 
                                 packet  = {
-                                        Latitude:  position.coords.latitude,  
-                                        Longitude: position.coords.longitude, 
-                                        Altitude:  position.coords.altitude,  
-                                        Accuracy: position.coords.accuracy,  
-                                        Altitude_Accuracy: position.coords.altitudeAccuracy, 
-                                        Heading:  position.coords.heading,  
-                                        Speed:     position.coords.speed 
+                                        latitude:  position.coords.latitude,  
+                                        longitude: position.coords.longitude, 
+                                        altitude:  position.coords.altitude,  
+                                        accuracy: position.coords.accuracy,  
+                                        altitudeAccuracy: position.coords.altitudeAccuracy, 
+                                        heading:  position.coords.heading,  
+                                        speed:     position.coords.speed 
                                         };   
                                 };
                                function onError() {
@@ -486,13 +546,15 @@
                var m_post = function(local_uri){
 		       UserModel.urlRoot = local_uri;
 		       UserModel.save().done(function(data){
-				if(data.merchant[0].input_structure.merchant_name != " "){
-		                        for(var i=0, l = data.feer_attributes.trade.services.length; i<l; i++){
-		                                TradeModel.urlSelect[i] = data.feer_attributes.trade.services[i].uri;
-		                         }
+				if(data.code == 210){
+				        Uri.push(data.feer_attributes.trade.deposit.rel); //Uri[5]
+				        Uri.push(data.feer_attributes.trade.sale.rel);//Uri[6]
+				        for(var i=0, l = data.feer_attributes.trade.sale.services.length; i<l; i++){
+		                                        TradeModel.urlSelect[i] = data.feer_attributes.trade.sale.services[i].uri;
+		                        }
 		                         return merchant_status[0];
 		                }else{
-		                         Uri.push(data.merchant[0].uri);   //add as merchant Uri[7]
+		                         Uri.push(data.feer_attributes.merchant.uri);   //add as merchant Uri[5]
 		                         return merchant_status[1];
 		                }
 		        });
